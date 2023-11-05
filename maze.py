@@ -1,18 +1,17 @@
 import pygame
-import random
+from utils.centralizeMaze import centralizeMaze
+from utils.drawMaze import draw_maze
+from utils.findInitialPosition import find_initial_mouse_position
+from utils.message import message
 
-# Initialize Pygame
 pygame.init()
 
-# Set the screen dimensions
+#constants
 screen_width = 800
 screen_height = 600
+fps = 15
 screen = pygame.display.set_mode((screen_width, screen_height))
-
-# Set the title of the game window
 pygame.display.set_caption("Mouse and Cheese Maze Game")
-
-# Set the block size
 block_size = 20
 
 # Set the clock
@@ -28,49 +27,41 @@ wall_texture = pygame.image.load("./assets/wall.png")
 
 # Load mouse and exit images
 mouse_image = pygame.image.load("./assets/mouse.png")
-exit_image = pygame.image.load("./assets/pipe.png")
+exit_image = pygame.image.load("./assets/cheese.png")
 
 # Define the game loop
 def gameLoop():
     game_exit = False
-    game_over = False
+    finish_game = False
 
     # Set the maze
     maze_list = []
     with open("maze.txt") as file:
         for line in file:
-            maze_list.append(list(line.strip()))  # Remove any newline characters and convert to a list
+            maze_list.append(list(line.strip()))
 
     # Centralize the maze on the screen
-    maze_width = len(maze_list[0]) * block_size
-    maze_height = len(maze_list) * block_size
-    maze_x = (screen_width - maze_width) // 2
-    maze_y = (screen_height - maze_height) // 2
+    maze_x, maze_y =centralizeMaze(maze_list, block_size, screen_width, screen_height)
 
     # Find the initial position of the mouse in the maze based on the "maze.txt" file
-    for row in range(len(maze_list)):
-        for column in range(len(maze_list[row])):
-            if maze_list[row][column] == "m":
-                maze_list[row] = maze_list[row][:column] + ["0"] + maze_list[row][column+1:]
-                mouse_x = column
-                mouse_y = row
+    mouse_x, mouse_y = find_initial_mouse_position(maze_list)
 
     # Set the game loop
     while not game_exit:
 
         # Set the game over loop
-        while game_over == True:
+        while finish_game == True:
             screen.fill((0, 0, 0))
             if show_message:
-                message("You found the exit, press 'C' to continue and 'Q' to quit the game", (255, 0, 0), font)
+                message("You found the exit, press 'C' to continue and 'Q' to quit the game", (255, 0, 0), font, screen, screen_height, screen_width)
             pygame.display.update()
 
-            # Check for user input
-            for event in pygame.event.get():
+            events = pygame.event.get()
+            for event in events:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         game_exit = True
-                        game_over = False
+                        finish_game = False
                     if event.key == pygame.K_c:
                         gameLoop()
 
@@ -104,34 +95,19 @@ def gameLoop():
 
         # Check if the mouse reached the exit
         if maze_list[mouse_y][mouse_x] == "e":
-            game_over = True
+            finish_game = True
 
         # Draw the maze
-        for row in range(len(maze_list)):
-            for column in range(len(maze_list[row])):
-                if maze_list[row][column] == "1":
-                    screen.blit(wall_texture, (maze_x + column * block_size, maze_y + row * block_size))
-                elif maze_list[row][column] == "0":
-                    screen.blit(floor_texture, (maze_x + column * block_size, maze_y + row * block_size))
-                elif maze_list[row][column] == "e":
-                    screen.blit(exit_image, (maze_x + column * block_size, maze_y + row * block_size))
+        draw_maze(screen, wall_texture, floor_texture, exit_image, block_size, maze_list, maze_x, maze_y)
 
         # Draw the mouse in the new position
         screen.blit(mouse_image, (maze_x + mouse_x * block_size, maze_y + mouse_y * block_size))
 
-        # Update the screen
         pygame.display.update()
 
-        # Set the frames per second
-        clock.tick(15)
+        clock.tick(fps)
 
-    # Quit Pygame
     pygame.quit()
 
-# Define the message function
-def message(msg, color, font):
-    screen_text = font.render(msg, True, color)
-    screen.blit(screen_text, [screen_width / 6, screen_height / 2])
-
-# Call the game loop
-gameLoop()
+if __name__ == "__main__":
+    gameLoop()
