@@ -1,18 +1,33 @@
+import os
 import pygame
-from utils.centralizeMaze import centralizeMaze
 from utils.drawMaze import draw_maze
 from utils.findInitialPosition import find_initial_mouse_position
 from utils.message import message
-
+from utils.moveMouse import moveMouse
+from utils.openMaze import openMaze
+from utils.constants import constants
+import argparse
+from colorama import init, Fore
+init()
 pygame.init()
 
+#get args to terminal for get path maze
+parser = argparse.ArgumentParser(description='Script para executar o jogo do labirinto em Pygame.')
+parser.add_argument('arquivo', help='Nome do arquivo do labirinto dentro da pasta "mazes"')
+args = parser.parse_args()
+constants["PATH_MAZE"] = os.path.join('mazes', args.arquivo)
+
+# Set the maze
+screen_info = pygame.display.Info()
+w_info = screen_info.current_w
+h_info = screen_info.current_h
+
 #constants
-screen_width = 800
-screen_height = 600
+block_size = 32
 fps = 15
+maze_list, screen_width, screen_height = openMaze(constants["PATH_MAZE"], w_info, h_info, block_size)
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Mouse and Cheese Maze Game")
-block_size = 20
 
 # Set the clock
 clock = pygame.time.Clock()
@@ -28,85 +43,53 @@ wall_texture = pygame.image.load("./assets/wall.png")
 # Load mouse and exit images
 mouse_image = pygame.image.load("./assets/mouse.png")
 exit_image = pygame.image.load("./assets/cheese.png")
+check_image = pygame.image.load("./assets/check.png")
 
 # Define the game loop
 def gameLoop():
-    game_exit = False
-    finish_game = False
+    try:
+        game_exit = False
 
-    # Set the maze
-    maze_list = []
-    with open("maze.txt") as file:
-        for line in file:
-            maze_list.append(list(line.strip()))
+        # Find the initial position of the mouse in the maze based on the "maze.txt" file
+        mouse_x, mouse_y = find_initial_mouse_position(maze_list)
 
-    # Centralize the maze on the screen
-    maze_x, maze_y =centralizeMaze(maze_list, block_size, screen_width, screen_height)
+        # Set the game loop
+        while not game_exit:
 
-    # Find the initial position of the mouse in the maze based on the "maze.txt" file
-    mouse_x, mouse_y = find_initial_mouse_position(maze_list)
+            # Set the game over loop
+            while constants["FINISH"] == True:
+                screen.fill((0, 0, 0))
+                if show_message:
+                    message("You found the exit, press 'C' to continue and 'Q' to quit the game", (255, 0, 0), font, screen, screen_height, screen_width)
+                pygame.display.update()
 
-    # Set the game loop
-    while not game_exit:
+                events = pygame.event.get()
+                for event in events:
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_q:
+                            game_exit = True
+                            constants["FINISH"] = False
+                        if event.key == pygame.K_c:
+                            gameLoop()
 
-        # Set the game over loop
-        while finish_game == True:
-            screen.fill((0, 0, 0))
-            if show_message:
-                message("You found the exit, press 'C' to continue and 'Q' to quit the game", (255, 0, 0), font, screen, screen_height, screen_width)
+            # Check for user input
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    game_exit = True
+
+            #Draw maze
+            draw_maze(screen, wall_texture, floor_texture, exit_image, mouse_image, check_image,block_size, maze_list, mouse_x, mouse_y)
+                
+            # Check if the mouse reached the exit
+            if maze_list[mouse_y][mouse_x] == "e":
+                constants["FINISH"] = True
+
             pygame.display.update()
 
-            events = pygame.event.get()
-            for event in events:
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q:
-                        game_exit = True
-                        finish_game = False
-                    if event.key == pygame.K_c:
-                        gameLoop()
-
-        # Check for user input
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                game_exit = True
-
-        # Controlling the mouse movement with the keyboard
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            next_x = mouse_x - 1
-            if maze_list[mouse_y][next_x] in ["0", "e"]:
-                maze_list[mouse_y][mouse_x] = "0"
-                mouse_x = next_x
-        if keys[pygame.K_RIGHT]:
-            next_x = mouse_x + 1
-            if maze_list[mouse_y][next_x] in ["0", "e"]:
-                maze_list[mouse_y][mouse_x] = "0"
-                mouse_x = next_x
-        if keys[pygame.K_UP]:
-            next_y = mouse_y - 1
-            if maze_list[next_y][mouse_x] in ["0", "e"]:
-                maze_list[mouse_y][mouse_x] = "0"
-                mouse_y = next_y
-        if keys[pygame.K_DOWN]:
-            next_y = mouse_y + 1
-            if maze_list[next_y][mouse_x] in ["0", "e"]:
-                maze_list[mouse_y][mouse_x] = "0"
-                mouse_y = next_y
-
-        # Check if the mouse reached the exit
-        if maze_list[mouse_y][mouse_x] == "e":
-            finish_game = True
-
-        # Draw the maze
-        draw_maze(screen, wall_texture, floor_texture, exit_image, block_size, maze_list, maze_x, maze_y)
-
-        # Draw the mouse in the new position
-        screen.blit(mouse_image, (maze_x + mouse_x * block_size, maze_y + mouse_y * block_size))
-
-        pygame.display.update()
-
-        clock.tick(fps)
-
+            clock.tick(fps)
+    except Exception as e:
+        print( Fore.RED, e, Fore.RESET)
+        
     pygame.quit()
 
 if __name__ == "__main__":
