@@ -7,7 +7,7 @@ def find_initial_mouse_position(maze_list):
                 return column, row
 
 def find_initial_exit_position(maze_list):
-    """find the initial position of the mouse in the maze"""
+    """find the initial position of the exit in the maze"""
     for row in range(len(maze_list)):
         for column in range(len(maze_list[row])):
             if maze_list[row][column] == "e":

@@ -1,15 +1,51 @@
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
 class Stack:
     def __init__(self):
-        self.positions = []
+        self.top = None
 
-    def __len__(self):
-        return len(self.positions)
+    def is_empty(self):
+        return self.top is None
+
+    def push(self, item):
+        new_node = Node(item)
+        new_node.next = self.top
+        self.top = new_node
+
+    def pop(self):
+        if not self.is_empty():
+            popped_item = self.top.data
+            self.top = self.top.next
+            return popped_item
+        return None
+
+    def peek(self):
+        if not self.is_empty():
+            return self.top.data
+
+    def size(self):
+        current = self.top
+        count = 0
+        while current:
+            count += 1
+            current = current.next
+        return count
     
-    def __str__(self):
-        return self.positions.__str__()
-
-    def push_stack(self, item):
-        self.positions.append(item)
-
-    def pop_stack(self):
-        return self.positions.pop()
+    def reverse(self):
+        reversed_stack = Stack()
+        current = self.top
+        while current:
+            reversed_stack.push(current.data)
+            current = current.next
+        return reversed_stack
+    
+    def contains(self, item):
+        current = self.top
+        while current:
+            if current.data == item:
+                return True
+            current = current.next
+        return False
