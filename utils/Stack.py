@@ -10,10 +10,11 @@ class Stack:
     def is_empty(self):
         return self.top is None
 
-    def push(self, item):
+    def push(self, item):        
         new_node = Node(item)
         new_node.next = self.top
         self.top = new_node
+        
 
     def pop(self):
         if not self.is_empty():

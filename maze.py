@@ -87,13 +87,17 @@ def gameLoop():
             # Draw maze
             draw_maze(screen, constants["BLOCK_SIZE"], maze_list, floor_texture, wall_texture, cheese_image, exit_x, exit_y)
             
-            correct_path, visiteds_path = solveMaze(maze_list, mouse_x, mouse_y, {"x": exit_x, "y": exit_y})
-            
-            if len(correct_path) > 0 or len(visiteds_path) > 0:
+            paths = solveMaze(maze_list, mouse_x, mouse_y, {"x": exit_x, "y": exit_y})
+
+            if paths is False:
+                raise Exception("Exit maze isn't accessible!")
+            else:
+                correct_path, visiteds_path = paths
+
                 for path in correct_path:
                     mouse_x, mouse_y = path 
                     #time to render positions             
-                    sleep(0.2)
+                    sleep(0.05)
                     screen.blit(mouse_image, (mouse_x * block_size, mouse_y * block_size))
                     pygame.display.update()
                 #render paths not visiteds and not in correct paths
@@ -104,9 +108,8 @@ def gameLoop():
                             break
                         screen.blit(check_image, (p_x * block_size, p_y * block_size))                     
                     pygame.display.update()
-                sleep(5)
+                sleep(7)
                 constants["FINISH"] = True
-
                 
             clock.tick(constants["FPS"])
     except Exception as e:
